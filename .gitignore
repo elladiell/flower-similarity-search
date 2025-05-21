@@ -33,7 +33,7 @@ data/*.png
 data/*.jpeg
 data/flowers/
 
-# Model weights (we'll add later once they're finalized)
+# Model weights (add later once they're finalized)
 # models/*.h5
 # models/*.pth
 
