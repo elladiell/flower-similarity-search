@@ -13,27 +13,27 @@ class FlowerSimilarityModel:
     def __init__(self, model_path: str = "models"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # Загрузка модели и преобразований
+        #Загрузка модели и преобразований
         self.model = self._load_model()
         self.transform = self._get_transforms()
         
-        # Пути к файлам модели
+        #Пути к файлам модели
         self.model_path = model_path
         self.features_path = os.path.join(model_path, "library_features.pkl")
         
-        # Загрузка библиотеки векторов признаков
+        #Загрузка библиотеки векторов признаков
         self.image_paths = []
         self.image_features = None
         self.image_labels = []
         self.classes = []
-        self.metadata = {}  # Добавляем словарь для метаданных
+        self.metadata = {}  #Добавляем словарь для метаданных
         self.load_features()
     
     def _load_model(self):
         """Загрузка предобученной модели efficientnet b0"""
         weights = EfficientNet_B0_Weights.IMAGENET1K_V1
         model = efficientnet_b0(weights=weights)
-        # Удалим последний полносвязанный слой, не нужна классификация по исходным классам
+        #Удалим последний полносвязанный слой, не нужна классификация по исходным классам
         model.classifier = torch.nn.Identity()
         model.eval()
         return model.to(self.device)
@@ -59,20 +59,20 @@ class FlowerSimilarityModel:
             self.image_labels = library_data['labels']
             self.classes = library_data['classes']
             
-            # Загружаем метаданные, если они есть
+            #Загружаем метаданные, если они есть
             if 'metadata' in library_data:
                 self.metadata = library_data['metadata']
             
             print(f"Загружены признаки для {len(self.image_paths)} изображений библиотеки")
             
-            # Проверка размерности признаков
+            #Проверка размерности признаков
             if len(self.image_features) > 0:
                 feature_dim = self.image_features.shape[1]
                 print(f"Размерность векторов признаков: {feature_dim}")
                 
         except Exception as e:
             print(f"Ошибка при загрузке признаков: {e}")
-            # Создаем пустые структуры данных
+            #Создаем пустые структуры данных
             self.image_paths = []
             self.image_features = np.array([])
             self.image_labels = []
@@ -104,21 +104,21 @@ class FlowerSimilarityModel:
         Возвращает:
         Dict[str, Any]: словарь с путями к изображениям, их показателями сходства и метаданными
         """
-        # Проверка загрузки признаков
+        #Проверка загрузки признаков
         if len(self.image_paths) == 0 or self.image_features is None or len(self.image_features) == 0:
             return {"error": "Библиотека изображений не загружена или пуста"}
         
         try:
-            # Извлекаем признаки из входного изображения
+            #Извлекаем признаки из входного изображения
             query_feature = self.extract_features(image)
             
-            # Вычисляем косинусное сходство между запросом и всеми изображениями
+            #Вычисляем косинусное сходство между запросом и всеми изображениями
             similarities = cosine_similarity(query_feature.reshape(1, -1), self.image_features)[0]
             
-            # Находим индексы top_n наиболее похожих изображений
+            #Находим индексы top_n наиболее похожих изображений
             top_indices = similarities.argsort()[-top_n:][::-1]
             
-            # Создаем словарь результатов с дополнительной информацией
+            #Создаем словарь результатов с дополнительной информацией
             result = {
                 "similar_images": [],
                 "feature_dim": query_feature.shape[0]
@@ -128,11 +128,11 @@ class FlowerSimilarityModel:
                 image_path = self.image_paths[idx]
                 similarity_score = float(similarities[idx])
                 
-                # Определяем класс изображения
+                #Определяем класс изображения
                 class_id = self.image_labels[idx] if idx < len(self.image_labels) else None
                 class_name = self.classes[class_id] if class_id is not None and class_id < len(self.classes) else "unknown"
                 
-                # Добавляем метаданные, если они есть
+                #Добавляем метаданные, если они есть
                 image_metadata = self.metadata.get(image_path, {}) if self.metadata else {}
                 
                 image_info = {
@@ -164,12 +164,12 @@ class FlowerSimilarityModel:
         if save_path is None:
             save_path = self.features_path
         
-        # Собираем пути к изображениям
+        #Собираем пути к изображениям
         image_paths = []
         labels = []
         classes = []
         
-        # Сканируем директорию, считая, что подпапки - это классы
+        #Сканируем директорию, считая, что подпапки - это классы
         for class_id, class_name in enumerate(sorted(os.listdir(image_dir))):
             class_dir = os.path.join(image_dir, class_name)
             if not os.path.isdir(class_dir):
@@ -183,7 +183,7 @@ class FlowerSimilarityModel:
                     image_paths.append(img_path)
                     labels.append(class_id)
         
-        # Извлекаем признаки из всех изображений
+        #Извлекаем признаки из всех изображений
         features_list = []
         valid_paths = []
         valid_labels = []
@@ -200,7 +200,7 @@ class FlowerSimilarityModel:
                 valid_paths.append(img_path)
                 valid_labels.append(label)
                 
-                # Добавляем базовые метаданные
+                #Добавляем базовые метаданные
                 metadata[img_path] = {
                     "filename": os.path.basename(img_path),
                     "class": classes[label],
@@ -213,10 +213,10 @@ class FlowerSimilarityModel:
             except Exception as e:
                 print(f"Ошибка при обработке {img_path}: {e}")
         
-        # Преобразуем список признаков в массив NumPy
+        #Преобразуем список признаков в массив NumPy
         features_array = np.array(features_list)
         
-        # Сохраняем извлеченные признаки и метаданные
+        #Сохраняем извлеченные признаки и метаданные
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         
         library_data = {
@@ -233,7 +233,7 @@ class FlowerSimilarityModel:
         print(f"Библиотека признаков создана и сохранена в {save_path}")
         print(f"Размерность признаков: {features_array.shape}")
         
-        # Обновляем текущую модель
+        #Обновляем текущую модель
         self.image_paths = valid_paths
         self.image_features = features_array
         self.image_labels = valid_labels

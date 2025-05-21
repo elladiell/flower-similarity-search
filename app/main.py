@@ -10,14 +10,14 @@ import json
 from typing import Dict, List, Optional
 from model import FlowerSimilarityModel
 
-# Определение путей к файлам моделей
+#Определение путей к файлам моделей
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Проверка наличия файла признаков в различных местах
+#Проверка наличия файла признаков в различных местах
 potential_model_paths = [
-    os.path.join(BASE_DIR, "models"),                # ./models
-    os.path.join(BASE_DIR, "..", "models"),          # ../models
-    os.path.join(os.path.dirname(BASE_DIR), "models")  # Соседняя директория models
+    os.path.join(BASE_DIR, "models"),                #./models
+    os.path.join(BASE_DIR, "..", "models"),          #../models
+    os.path.join(os.path.dirname(BASE_DIR), "models")  #Соседняя директория models
 ]
 
 MODEL_PATH = None
@@ -33,7 +33,7 @@ if MODEL_PATH is None:
     MODEL_PATH = os.path.join(BASE_DIR, "models")
     os.makedirs(MODEL_PATH, exist_ok=True)
 
-# Создание директории для статических файлов, если она не существует
+#Создание директории для статических файлов, если она не существует
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -43,7 +43,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Добавляем CORS middleware для разрешения запросов с разных источников
+#Добавляем CORS middleware для разрешения запросов с разных источников
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,10 +52,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Монтируем статические файлы
+#Монтируем статические файлы
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Инициализация модели
+#Инициализация модели
 model = FlowerSimilarityModel(model_path=MODEL_PATH)
 
 @app.get("/")
@@ -137,24 +137,21 @@ def list_endpoints():
 async def predict(file: UploadFile = File(...), top_n: int = Query(5, description="Количество возвращаемых похожих изображений")):
     """
     Загрузка изображения и поиск похожих изображений растений
-    
-    Args:
-        file: Загружаемое изображение
-        top_n: Количество возвращаемых похожих изображений
-        
-    Returns:
-        Dict: Словарь с путями к похожим изображениям и их показателями сходства
+    file: Загружаемое изображение
+    top_n: Количество возвращаемых похожих изображений
+    Возвращаем:
+    Dict: Словарь с путями к похожим изображениям и их показателями сходства
     """
-    # Проверка типа файла
+    #Проверка типа файла
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Файл должен быть изображением")
     
     try:
-        # Чтение и преобразование изображения
+        #Чтение и преобразование изображения
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         
-        # Сохраняем загруженное изображение для отладки
+        #Сохраняем загруженное изображение для отладки
         upload_dir = os.path.join(STATIC_DIR, "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         
@@ -162,12 +159,12 @@ async def predict(file: UploadFile = File(...), top_n: int = Query(5, descriptio
         upload_path = os.path.join(upload_dir, upload_filename)
         image.save(upload_path)
         
-        # Поиск похожих изображений
+        #Поиск похожих изображений
         start_time = time.time()
         similar_images = model.find_similar_images(image, top_n=top_n)
         process_time = time.time() - start_time
         
-        # Проверяем, есть ли ошибки в результате
+        #Проверяем, есть ли ошибки в результате
         if isinstance(similar_images, dict) and "error" in similar_images:
             return JSONResponse(
                 content={
@@ -177,7 +174,7 @@ async def predict(file: UploadFile = File(...), top_n: int = Query(5, descriptio
                 status_code=404
             )
         
-        # Подготовка ответа
+        #Подготовка ответа
         response = {
             "result": similar_images,
             "uploaded_image": {
@@ -199,15 +196,12 @@ async def predict(file: UploadFile = File(...), top_n: int = Query(5, descriptio
 def get_info():
     """
     Получение информации о модели и библиотеке изображений
-    
-    Returns:
-        Dict: Информация о модели и библиотеке
     """
     feature_dim = 0
     if model.image_features is not None and len(model.image_features) > 0:
         feature_dim = model.image_features.shape[1]
     
-    # Получение распределения классов
+    #Получение распределения классов
     class_distribution = {}
     if model.image_labels and model.classes:
         for i, cls in enumerate(model.classes):
@@ -248,13 +242,13 @@ def create_library(image_dir: str, save_path: Optional[str] = None):
                 status_code=400
             )
         
-        # Если путь сохранения не указан, используем стандартный
+        #Если путь сохранения не указан, используем стандартный
         if save_path is None:
             save_path = model.features_path
         
         start_time = time.time()
         
-        # Создаем библиотеку векторов признаков
+        #Создаем библиотеку векторов признаков
         model.create_features_library(image_dir, save_path)
         
         process_time = time.time() - start_time
@@ -280,5 +274,5 @@ def create_library(image_dir: str, save_path: Optional[str] = None):
 
 if __name__ == "__main__":
     import uvicorn
-    # Используем текущий модуль main:app вместо app.main:app
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
