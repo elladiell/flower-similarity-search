@@ -11,11 +11,11 @@ class FlowerSimilarityModel:
     def __init__(self, model_path: str = "../models"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        #Загрузка модели и преобразований
+        # Загрузка модели и преобразований
         self.model = self._load_model()
         self.transform = self._get_transforms()
         
-        #Загрузка библиотеки векторов признаков
+        # Загрузка библиотеки векторов признаков
         self.image_features = {}
         self.load_features()
     
@@ -38,13 +38,13 @@ class FlowerSimilarityModel:
     
     def load_features(self):
         """Загрузка предварительно извлеченных признаков"""
-        # Заглушка, будет реализовано позже
+        #Заглушка, будет реализовано позже
         pass
     
     def extract_features(self, image: Image.Image) -> np.ndarray:
         """Извлечение вектора признаков из изображения"""
-        # Заглушка, будет реализовано позже
-        return np.zeros(2048)  # Заглушка
+        #Заглушка, будет реализовано позже
+        return np.zeros(2048)  #Заглушка
     
     def find_similar_images(self, image: Image.Image, top_n: int = 5) -> Dict[str, float]:
         """
